@@ -5,6 +5,6 @@ export const SOURCE_URL =
   process.env.NEXT_PUBLIC_SOURCE_URL || "https://github.com/vern-so/vern-demos";
 
 export const BOOK_A_CALL_URL =
-  process.env.NEXT_PUBLIC_BOOK_A_CALL_URL || "https://vern.so";
+  process.env.NEXT_PUBLIC_BOOK_A_CALL_URL || "https://cal.com/vishvarma/30min";
 
 export const DOCS_URL = "https://docs.vern.so/migration-api/introduction";
