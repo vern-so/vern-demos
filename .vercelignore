@@ -1,0 +1,8 @@
+.env*.local
+.claude
+.context
+.DS_Store
+.next
+node_modules
+supa*/
+*.tsbuildinfo

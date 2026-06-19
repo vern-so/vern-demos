@@ -1,0 +1,41 @@
+{
+  "name": "vern-migration-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example embeddable UI for the Vern Migration API — upload a file, watch the agent map and validate it live, download clean data.",
+  "license": "MIT",
+  "homepage": "https://docs.vern.so/migration-api/introduction",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vern-so/vern-demos.git"
+  },
+  "keywords": [
+    "vern",
+    "data-migration",
+    "nextjs",
+    "example",
+    "embeddable"
+  ],
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.5.19",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  }
+}
