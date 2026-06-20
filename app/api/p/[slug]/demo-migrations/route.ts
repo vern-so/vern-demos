@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  COMPLETE_RUN_LIMIT,
   completedCount,
   insertDemoMigration,
   listDemoMigrations,
@@ -24,7 +23,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ slug: strin
   return NextResponse.json({
     migrations: items,
     completedCount: count,
-    completeLimit: COMPLETE_RUN_LIMIT,
+    completeLimit: access.prospect.import_limit,
   });
 }
 
@@ -32,10 +31,11 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
   const access = await resolve(req, (await ctx.params).slug);
   if (access instanceof Response) return access;
 
+  const limit = access.prospect.import_limit;
   const count = await completedCount(access.slug);
-  if (count >= COMPLETE_RUN_LIMIT) {
+  if (count >= limit) {
     return NextResponse.json(
-      { error: `This demo link has reached its ${COMPLETE_RUN_LIMIT}-import limit.` },
+      { error: `This demo link has reached its ${limit}-import limit.` },
       { status: 403 },
     );
   }

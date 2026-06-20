@@ -2,6 +2,8 @@ import "server-only";
 import { hasRegistry, isMissingRegistryTable, registryRequest } from "./registry";
 import type { RunReport } from "./types";
 
+// Default cap on completed imports per demo link. A prospect's own
+// `import_limit` (see Prospect) overrides this; it's the fallback default.
 export const COMPLETE_RUN_LIMIT = 3;
 
 export type DemoMigrationStatus =
