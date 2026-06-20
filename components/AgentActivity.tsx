@@ -3,14 +3,19 @@
 import { useEffect, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CheckIcon } from "./Icons";
+import { TOOL_ICONS } from "./toolMap";
 
 // One chronological item in the agent's live activity: a chunk of streamed prose,
 // or a tool action it took. They interleave in the order they actually happened.
 export type FeedItem =
   | { kind: "text"; text: string }
-  | { kind: "tool"; id: number; text: string }
+  | { kind: "tool"; id: number; text: string; icon?: string }
   | { kind: "user"; id?: number; text: string };
+
+function ToolGlyph({ icon }: { icon?: string }) {
+  const Icon = (icon && TOOL_ICONS[icon]) || TOOL_ICONS.Wrench;
+  return <Icon className="h-3.5 w-3.5" strokeWidth={1.8} aria-hidden="true" />;
+}
 
 export function AgentActivity({
   feed,
@@ -90,10 +95,10 @@ function Stream({
         item.kind === "tool" ? (
           <div key={`t${item.id}`} className="my-2 flex items-center gap-2">
             <span
-              className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
-              style={{ background: "var(--brand)", color: "var(--brand-fg)" }}
+              className="flex h-4 w-4 shrink-0 items-center justify-center"
+              style={{ color: "var(--brand)" }}
             >
-              <CheckIcon className="h-3 w-3" />
+              <ToolGlyph icon={item.icon} />
             </span>
             <span className="font-medium text-zinc-700">{item.text}</span>
           </div>

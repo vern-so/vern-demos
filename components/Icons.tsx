@@ -59,6 +59,16 @@ export function AlertIcon({ className }: P) {
   );
 }
 
+export function InfoIcon({ className }: P) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" strokeLinecap="round" />
+      <circle cx="12" cy="7.8" r="0.65" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function CloseIcon({ className }: P) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8}>

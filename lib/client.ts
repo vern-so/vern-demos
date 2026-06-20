@@ -8,6 +8,25 @@ import type { DemoMigration, Migration, Run, RunReport, SampleCsvFile, Source, T
 // Kept comfortably under 4.5 MB to leave headroom for request overhead.
 const PROXY_MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
+const EXT_CONTENT_TYPES: Record<string, string> = {
+  csv: "text/csv",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  sql: "application/sql",
+  bak: "application/octet-stream",
+};
+
+// Best-effort content type for an upload. Browsers leave file.type empty for
+// formats like .sql and .bak, so fall back to the extension, then octet-stream.
+// Used for both the registered upload URL and the PUT so the two always match.
+export function contentTypeFor(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_CONTENT_TYPES[ext] ?? "application/octet-stream";
+}
+
 export class ApiError extends Error {
   status: number;
   data: unknown;
@@ -136,7 +155,7 @@ export function makeClient(slug: string) {
     if (file.size > PROXY_MAX_UPLOAD_BYTES) {
       const res = await fetch(signedUrl, {
         method: "PUT",
-        headers: { "Content-Type": file.type || "text/csv" },
+        headers: { "Content-Type": contentTypeFor(file) },
         body: file,
       });
       if (!res.ok) {
@@ -151,7 +170,7 @@ export function makeClient(slug: string) {
     // protection-bypass token when the signed host sits behind staging protection.
     const res = await fetch(`${base}/upload`, {
       method: "PUT",
-      headers: { "x-signed-url": signedUrl, "x-content-type": file.type || "text/csv" },
+      headers: { "x-signed-url": signedUrl, "x-content-type": contentTypeFor(file) },
       body: await file.arrayBuffer(),
     });
     if (!res.ok) {

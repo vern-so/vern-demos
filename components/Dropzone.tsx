@@ -1,10 +1,16 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { CloseIcon, FileIcon, UploadIcon } from "./Icons";
+import { CloseIcon, FileIcon, InfoIcon, UploadIcon } from "./Icons";
 
 const ACCEPT =
-  ".csv,.xlsx,.xls,.pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/pdf";
+  ".csv,.xlsx,.xls,.pdf,.docx,.sql,.bak," +
+  "text/csv,application/vnd.ms-excel," +
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/pdf," +
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+const SUPPORTED_TYPES =
+  "Supports CSV, Excel, PDF, Word (.docx), SQL dumps (.sql), and database backups (.bak).";
 
 export function Dropzone({
   files,
@@ -61,8 +67,24 @@ export function Dropzone({
         <p className="text-sm font-medium text-zinc-800">
           Drop your exports here, or <span style={{ color: "var(--brand)" }}>browse</span>
         </p>
-        <p className="mt-1 text-xs text-zinc-400">
-          CSV, Excel, or PDF. Messy is fine - it handles everything.
+        <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-zinc-400">
+          Messy is fine - it handles everything.
+          <span className="group relative inline-flex">
+            <button
+              type="button"
+              aria-label={SUPPORTED_TYPES}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center rounded-full text-zinc-400 transition hover:text-zinc-600 focus:outline-none focus-visible:text-zinc-600"
+            >
+              <InfoIcon className="h-3.5 w-3.5" />
+            </button>
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-lg bg-zinc-900 px-3 py-2 text-left text-[11px] leading-snug text-zinc-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+            >
+              {SUPPORTED_TYPES}
+            </span>
+          </span>
         </p>
         {action && <div className="mt-5">{action}</div>}
         <input

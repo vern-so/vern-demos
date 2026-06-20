@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readableFg, softTint, type Brand } from "@/lib/branding";
 import type { AgentQuestion, DemoMigration, RunReport, SampleCsvFile, Source, Template, ThreadEvent } from "@/lib/types";
-import { ApiError, makeClient, type VernClient } from "@/lib/client";
+import { ApiError, contentTypeFor, makeClient, type VernClient } from "@/lib/client";
 import { normalizePreview, type PreviewSheet } from "@/lib/preview";
 import { Shell } from "@/components/Shell";
 import { Stepper, type StepKey } from "@/components/Stepper";
 import { Dropzone } from "@/components/Dropzone";
 import { AgentActivity, type FeedItem } from "@/components/AgentActivity";
 import { Questions } from "@/components/Questions";
+import { toolDisplay } from "@/components/toolMap";
 import { Preview } from "@/components/Preview";
 import { Report } from "@/components/Report";
 import { Button } from "@/components/Button";
@@ -285,6 +286,17 @@ function Flow({
   // Fold each streamed thread event into the live feed.
   const handleEvent = useCallback((ev: ThreadEvent) => {
     if (typeof ev.sequence === "number" && ev.sequence >= 0) cursorRef.current = ev.sequence;
+
+    // The agent is asking for input — surface the question form immediately from
+    // the live event, instead of waiting for the stream to close and a follow-up
+    // getRun() to report it. Handled before userTextForEvent so it isn't
+    // mis-rendered as a user message (its type matches the /input/i heuristic).
+    if (ev.type === "request_input") {
+      const qs = questionsFromEvent(ev);
+      if (qs.length > 0) setQuestions(qs);
+      return;
+    }
+
     const userText = userTextForEvent(ev);
     if (userText) {
       setFeed((prev) => {
@@ -293,13 +305,21 @@ function Flow({
         return [...prev, { kind: "user", id: ev.sequence, text: userText }];
       });
     } else if (ev.type === "tool_call") {
-      const text = (ev.data as { text?: string })?.text;
+      const data = (ev.data ?? {}) as Record<string, unknown>;
+      const name =
+        (typeof data.name === "string" && data.name) ||
+        (typeof data.tool === "string" && data.tool) ||
+        (typeof data.tool_name === "string" && data.tool_name) ||
+        null;
+      const args = (data.args ?? data.arguments ?? data.input ?? data) as Record<string, unknown>;
+      const serverText = typeof data.text === "string" ? data.text : null;
+      const { copy: text, icon } = toolDisplay(name, args, serverText);
       if (!text) return;
       setFeed((prev) => {
         // Collapse consecutive identical actions (e.g. repeated "Analyzing…").
         const last = prev[prev.length - 1];
         if (last?.kind === "tool" && last.text === text) return prev;
-        return [...prev, { kind: "tool", id: ev.sequence, text }];
+        return [...prev, { kind: "tool", id: ev.sequence, text, icon }];
       });
     } else if (ev.type === "message") {
       if (typeof ev.data === "string" && ev.data) {
@@ -399,7 +419,7 @@ function Flow({
 
       const urls = await client.requestUploadUrls(
         m.id,
-        files.map((f) => ({ name: f.name, content_type: f.type || "text/csv" })),
+        files.map((f) => ({ name: f.name, content_type: contentTypeFor(f) })),
       );
       await Promise.all(
         urls.map((u) => {
@@ -418,7 +438,7 @@ function Flow({
           last_thread_sequence: cursorRef.current ?? null,
         });
       } else if (run.status === "blocked") {
-        setQuestions(run.questions || []);
+        setQuestions((prev) => (run.questions?.length ? run.questions : prev));
         await rememberMigration(m.id, {
           status: "blocked",
           last_thread_sequence: cursorRef.current ?? null,
@@ -466,7 +486,11 @@ function Flow({
       const runId = currentRunIdRef.current;
       if (!migrationId || !runId) return;
       const resumeAfter = cursorRef.current;
-      const userText = formatAnswersForStream(questions, answers);
+      const pending = questions;
+      const userText = formatAnswersForStream(pending, answers);
+      // Optimistically clear the question UI the instant the user responds; if
+      // the submit fails we restore it below so they can retry.
+      setQuestions([]);
       setBusy(true);
       try {
         appendUserMessage(userText);
@@ -479,7 +503,6 @@ function Flow({
           userMessages: userText ? [userText] : undefined,
         });
         await client.answerQuestions(migrationId, runId, answers);
-        setQuestions([]);
         setAgentSettled(false);
         setAgentElapsed(0);
         setPreview([]);
@@ -494,13 +517,14 @@ function Flow({
             last_thread_sequence: cursorRef.current ?? null,
           });
         } else if (run.status === "blocked") {
-          setQuestions(run.questions || []);
+          setQuestions((prev) => (run.questions?.length ? run.questions : prev));
           await rememberMigration(migrationId, {
             status: "blocked",
             last_thread_sequence: cursorRef.current ?? null,
           });
         }
       } catch (e) {
+        setQuestions(pending); // restore the question UI so the user can retry
         fail(e);
       } finally {
         setBusy(false);
@@ -550,7 +574,7 @@ function Flow({
         setPhase("done");
         clearProgress();
       } else if (run.status === "blocked") {
-        setQuestions(run.questions || []);
+        setQuestions((prev) => (run.questions?.length ? run.questions : prev));
         await rememberMigration(migrationId, {
           status: "blocked",
           last_thread_sequence: cursorRef.current ?? null,
@@ -616,7 +640,7 @@ function Flow({
             last_thread_sequence: cursorRef.current ?? null,
           });
         } else if (run.status === "blocked") {
-          setQuestions(run.questions || []);
+          setQuestions((prev) => (run.questions?.length ? run.questions : prev));
           await rememberMigration(migrationId, {
             status: "blocked",
             last_thread_sequence: cursorRef.current ?? null,
@@ -645,7 +669,7 @@ function Flow({
     setSelectedSlugs(slugs);
     currentRunIdRef.current = runId;
     setRunKind(kind === "execute" ? "execute" : "generate");
-    setFeed((userMessages || []).map((text): FeedItem => ({ kind: "user", text })));
+    setFeed([]);
     cursorRef.current = after;
     setQuestions([]);
     setAgentSettled(false);
@@ -653,14 +677,18 @@ function Flow({
     setPreviewReady(false);
     setPhase("agent");
     try {
-      // Replay the thread so the user sees the history, then continue live.
-      const snap = await client.getThreadSnapshot(mId, { include: "all", after }).catch(() => null);
+      // Replay the full thread from the start so the user sees the entire
+      // history (not just events after the last-seen cursor), then continue live.
+      const snap = await client.getThreadSnapshot(mId, { include: "all" }).catch(() => null);
       if (snap?.events?.length) {
         snap.events.forEach(handleEvent);
         const firstTs = snap.events[0]?.created_at ? Date.parse(snap.events[0].created_at) : NaN;
         if (!Number.isNaN(firstTs)) {
           setAgentElapsed(Math.max(0, Math.floor((Date.now() - firstTs) / 1000)));
         }
+      } else {
+        // No thread snapshot available — fall back to the persisted messages.
+        setFeed((userMessages || []).map((text): FeedItem => ({ kind: "user", text })));
       }
       if (typeof snap?.last_sequence === "number") cursorRef.current = snap.last_sequence;
       let run = await client.getRun(mId, runId);
@@ -670,7 +698,7 @@ function Flow({
       }
       setAgentSettled(true);
       if (run.status === "awaiting_approval") setPreviewReady(true);
-      else if (run.status === "blocked") setQuestions(run.questions || []);
+      else if (run.status === "blocked") setQuestions((prev) => (run.questions?.length ? run.questions : prev));
       else if (run.status === "completed") {
         setReport(run.report);
         await rememberMigration(mId, {
@@ -915,6 +943,11 @@ function Flow({
 
       {phase === "agent" && (
         <div className="flex flex-col gap-5">
+          {/* When the agent is asking, surface the question above the live
+              activity stream so the user sees what to act on first. */}
+          {questions.length > 0 && (
+            <Questions questions={questions} onSubmit={submitAnswers} submitting={busy} />
+          )}
           <AgentActivity
             feed={feed}
             settled={agentSettled}
@@ -922,9 +955,6 @@ function Flow({
             kind={runKind}
             elapsed={agentElapsed}
           />
-          {questions.length > 0 && (
-            <Questions questions={questions} onSubmit={submitAnswers} submitting={busy} />
-          )}
           {agentSettled && questions.length === 0 && previewReady && (
             <div className="flex justify-end">
               <Button onClick={preview.length > 0 ? () => setPhase("review") : viewPreview} loading={busy}>
@@ -1515,6 +1545,55 @@ function textFromUnknown(value: unknown): string | null {
     return text.trim() || null;
   }
   return null;
+}
+
+// Extract clarifying questions from a live `request_input` thread event. Parsed
+// defensively because the payload may be a bare array, an object with a
+// questions/requests/inputs array, or a single inline question.
+function questionsFromEvent(ev: ThreadEvent): AgentQuestion[] {
+  const d = ev.data;
+  let raw: unknown[] = [];
+  if (Array.isArray(d)) {
+    raw = d;
+  } else if (d && typeof d === "object") {
+    const o = d as Record<string, unknown>;
+    if (Array.isArray(o.questions)) raw = o.questions;
+    else if (Array.isArray(o.requests)) raw = o.requests;
+    else if (Array.isArray(o.inputs)) raw = o.inputs;
+    else if (o.question != null || o.text != null || o.prompt != null) raw = [o];
+  }
+  return raw.map(normalizeQuestion).filter((q): q is AgentQuestion => q !== null);
+}
+
+function normalizeQuestion(value: unknown): AgentQuestion | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+  const question = textFromUnknown(v.question) || textFromUnknown(v.text) || textFromUnknown(v.prompt);
+  if (!question) return null;
+  const id = typeof v.id === "string" && v.id ? v.id : question.slice(0, 60);
+  const context =
+    textFromUnknown(v.context) || textFromUnknown(v.description) || textFromUnknown(v.detail);
+  const rawOptions = Array.isArray(v.options) ? v.options : Array.isArray(v.choices) ? v.choices : [];
+  const options = rawOptions
+    .map((o) => {
+      if (typeof o === "string") return o.trim() ? { id: o, label: o } : null;
+      if (o && typeof o === "object") {
+        const oo = o as Record<string, unknown>;
+        const label = textFromUnknown(oo.label) || textFromUnknown(oo.value) || textFromUnknown(oo.id);
+        if (!label) return null;
+        const oid = typeof oo.id === "string" && oo.id ? oo.id : label;
+        return { id: oid, label };
+      }
+      return null;
+    })
+    .filter((o): o is { id: string; label: string } => o !== null);
+  return {
+    id,
+    question,
+    context: context ?? null,
+    options: options.length > 0 ? options : undefined,
+    allowCustom: typeof v.allowCustom === "boolean" ? v.allowCustom : undefined,
+  };
 }
 
 function formatAnswersForStream(
