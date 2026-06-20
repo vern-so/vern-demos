@@ -527,6 +527,9 @@ function Flow({
           after: resumeAfter,
           userMessages: userMessagesRef.current,
         });
+        // Persist answers server-side too, so resume works across devices. (The
+        // thread API doesn't store answers yet; remove once it exposes them.)
+        void rememberMigration(migrationId, { answers: userMessagesRef.current });
         await client.answerQuestions(migrationId, runId, answers);
         setAgentSettled(false);
         setAgentElapsed(0);
@@ -655,6 +658,7 @@ function Flow({
           run_kind: "update",
           status: "mapping",
           resume_after: resumeAfter ?? null,
+          answers: userMessagesRef.current,
         });
         await streamCurrent(migrationId);
         setAgentSettled(true);
@@ -848,6 +852,8 @@ function Flow({
         runKind: row.run_kind || "generate",
         slugs: row.templates,
         after: row.resume_after ?? undefined,
+        // Server-persisted answers — the only source on a different device.
+        userMessages: row.answers,
         status: row.status,
       });
     },

@@ -108,6 +108,9 @@ export type DemoMigration = {
   report: RunReport | null;
   resume_after: number | null;
   last_thread_sequence: number | null;
+  // User answers (anchored to the thread sequence each followed). Persisted as a
+  // workaround until the thread API exposes them; used to replay on resume.
+  answers: { after: number; text: string }[];
   created_at: string;
   updated_at: string;
   completed_at: string | null;

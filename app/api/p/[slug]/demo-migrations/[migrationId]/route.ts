@@ -50,6 +50,7 @@ function cleanPatch(body: Record<string, unknown>) {
     "report",
     "resume_after",
     "last_thread_sequence",
+    "answers",
     "completed_at",
   ]) {
     if (key in body) patch[key] = body[key];

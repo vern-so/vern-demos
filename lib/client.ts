@@ -125,6 +125,7 @@ export function makeClient(slug: string) {
       report: RunReport | null;
       resume_after: number | null;
       last_thread_sequence: number | null;
+      answers: { after: number; text: string }[];
       completed_at: string | null;
     }>,
   ): Promise<DemoMigration | null> {
