@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
-const DEFAULT_MODEL = "gpt-5.5";
+const DEFAULT_MODEL = "gpt-5.5-mini";
 const MAX_TEMPLATES = 8;
 const MAX_COLUMNS_PER_TEMPLATE = 32;
 const MAX_FILES = 8;

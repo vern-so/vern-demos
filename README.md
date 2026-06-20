@@ -42,30 +42,14 @@ Set `VERN_API_KEY` in `.env.local`, then open `http://localhost:3000`.
 
 ## Deploy
 
-Import the repo into Vercel and set the required API key:
+Import the repo into Vercel and set the one required key:
 
 | Key | Required | Purpose |
 | --- | --- | --- |
 | `VERN_API_KEY` | Yes | Authenticates requests to Vern. |
-| `OPENAI_API_KEY` | No | Enables generated sample files. |
 
-Optional API settings:
-
-| Key | Purpose |
-| --- | --- |
-| `VERN_API_BASE` | Override the Vern API base URL. |
-| `VERN_PROTECTION_BYPASS` | Use only for protected staging APIs. |
-| `OPENAI_SAMPLE_MODEL` | Override the sample-generation model. |
-
-Optional UI links:
-
-| Key | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_SOURCE_URL` | Header "View source" link. |
-| `NEXT_PUBLIC_BOOK_A_CALL_URL` | Done-screen CTA link. |
-
-Branding and access-gate variables are shown in `.env.local.example` for local customization, but
-you only need `VERN_API_KEY` to run the demo.
+That is all you need to run the demo. Every other setting is optional — sample-file generation,
+API overrides, branding, the access gate, and UI links are all documented in `.env.local.example`.
 
 ## Project Shape
 

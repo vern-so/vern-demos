@@ -2,7 +2,7 @@ import "server-only";
 import { hasRegistry, isMissingRegistryTable, registryRequest } from "./registry";
 import type { RunReport } from "./types";
 
-export const COMPLETE_RUN_LIMIT = 5;
+export const COMPLETE_RUN_LIMIT = 3;
 
 export type DemoMigrationStatus =
   | "created"

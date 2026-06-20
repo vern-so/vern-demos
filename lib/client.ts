@@ -3,6 +3,11 @@
 
 import type { DemoMigration, Migration, Run, RunReport, SampleCsvFile, Source, Template, ThreadEvent } from "./types";
 
+// Files at or below this go through the server-side proxy; larger ones are PUT
+// directly to storage to avoid Vercel's ~4.5 MB function request-body limit.
+// Kept comfortably under 4.5 MB to leave headroom for request overhead.
+const PROXY_MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
 export class ApiError extends Error {
   status: number;
   data: unknown;
@@ -123,6 +128,27 @@ export function makeClient(slug: string) {
   }
 
   async function uploadToSignedUrl(signedUrl: string, file: File): Promise<void> {
+    // Vercel Functions reject request bodies larger than ~4.5 MB
+    // (FUNCTION_PAYLOAD_TOO_LARGE) at the edge, before the function even runs, so
+    // the server-side proxy can only carry small files. Larger files are PUT
+    // straight to the signed storage URL from the browser, which has no such cap.
+    // (Direct upload relies on the storage bucket allowing cross-origin PUTs.)
+    if (file.size > PROXY_MAX_UPLOAD_BYTES) {
+      const res = await fetch(signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "text/csv" },
+        body: file,
+      });
+      if (!res.ok) {
+        throw new ApiError(res.status, {
+          error: `Upload failed (${res.status}). The storage service rejected the file.`,
+        });
+      }
+      return;
+    }
+
+    // Small files: proxy server-side to handle storage CORS and to attach the
+    // protection-bypass token when the signed host sits behind staging protection.
     const res = await fetch(`${base}/upload`, {
       method: "PUT",
       headers: { "x-signed-url": signedUrl, "x-content-type": file.type || "text/csv" },
