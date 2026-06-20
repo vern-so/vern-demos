@@ -2,7 +2,7 @@
 // so they're safe to read on the client. Defaults point at Vern; override per fork.
 
 export const SOURCE_URL =
-  process.env.NEXT_PUBLIC_SOURCE_URL || "https://github.com/vern-so/vern-demos";
+  process.env.NEXT_PUBLIC_SOURCE_URL || "https://github.com/vern-so/migration-harness-demo";
 
 export const BOOK_A_CALL_URL =
   process.env.NEXT_PUBLIC_BOOK_A_CALL_URL || "https://cal.com/vishvarma/30min";

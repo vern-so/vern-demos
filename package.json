@@ -7,7 +7,7 @@
   "homepage": "https://docs.vern.so/migration-api/introduction",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vern-so/vern-demos.git"
+    "url": "https://github.com/vern-so/migration-harness-demo.git"
   },
   "keywords": [
     "vern",

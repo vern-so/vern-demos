@@ -29,7 +29,7 @@ Examples of unacceptable behavior:
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the maintainers via GitHub's
-[private vulnerability reporting](https://github.com/vern-so/vern-demos/security/advisories/new)
+[private vulnerability reporting](https://github.com/vern-so/migration-harness-demo/security/advisories/new)
 or by contacting a maintainer directly. All complaints will be reviewed and
 investigated promptly and fairly.
 
