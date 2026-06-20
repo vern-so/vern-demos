@@ -56,7 +56,7 @@ export function Report({
       </div>
 
       <div className="mt-6">
-        <Button onClick={downloadAll} className="w-full sm:w-auto">
+        <Button variant="secondary" onClick={downloadAll} className="w-full sm:w-auto">
           <DownloadIcon className="h-4 w-4" />
           {multiple
             ? `Download all (${templates.length} files)`
