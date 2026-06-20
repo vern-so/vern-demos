@@ -7,6 +7,7 @@ import {
 } from "@/lib/demo-migrations";
 import { cookieName, isGated, verifySession } from "@/lib/auth";
 import { getProspect } from "@/lib/demo-config";
+import { notifyDemoCreated } from "@/lib/notify";
 import { vernFetch } from "@/lib/vern";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +74,14 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
       migrationId,
       templates: body.templates,
       source: body.source ?? null,
+    });
+    await notifyDemoCreated({
+      product: access.prospect.product,
+      slug: access.slug,
+      email: access.email,
+      templates: body.templates,
+      source: body.source ?? null,
+      migrationId,
     });
   }
 
