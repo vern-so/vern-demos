@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/vern-so/vern-demos/security/advisories/new
+    about: Please report security issues privately — never as a public issue.
+  - name: Vern Migration API docs
+    url: https://docs.vern.so/migration-api/introduction
+    about: Questions about the Vern Migration API itself (not this demo UI).
