@@ -125,6 +125,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
                 "The CSVs should feel like real customer exports, not toy examples.",
                 "Make the messiness recoverable by a migration agent: renamed and inconsistent headers, extra source-only columns, missing optional values, malformed emails or phone numbers, mixed date formats, status synonyms, duplicates, whitespace/casing drift, relationship/link columns, and quoted notes with commas.",
                 "Tailor issues to the template rules and source context. Required fields may be missing in some rows, but most rows should be usable.",
+                "Every data row must have exactly the same number of columns as the header row. Represent missing values as empty fields (e.g. two adjacent commas) and never drop, shift, or merge cells, so columns stay aligned.",
                 "Use only fictitious people, companies, emails, addresses, and IDs.",
                 "Do not include markdown fences or commentary inside CSV strings.",
               ].join(" "),
