@@ -1,7 +1,7 @@
 "use client";
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "ghost" | "outline";
+  variant?: "primary" | "secondary" | "ghost" | "outline";
   loading?: boolean;
 };
 
@@ -11,9 +11,11 @@ export function Button({ variant = "primary", loading, children, className = "",
   const styles =
     variant === "primary"
       ? "text-[var(--brand-fg)] hover:brightness-95"
-      : variant === "outline"
-        ? "border border-zinc-300 text-zinc-700 hover:bg-zinc-50"
-        : "text-zinc-500 hover:text-zinc-800";
+      : variant === "secondary"
+        ? "bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
+        : variant === "outline"
+          ? "border border-zinc-300 text-zinc-700 hover:bg-zinc-50"
+          : "text-zinc-500 hover:text-zinc-800";
   return (
     <button
       type={rest.type ?? "button"}
